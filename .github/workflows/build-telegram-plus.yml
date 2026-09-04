@@ -1,0 +1,108 @@
+name: Build Telegram Plus
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - 'README.md'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-26
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          fetch-depth: '0'
+
+      - name: Set active Xcode path
+        run: |
+          XCODE_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["xcode"]);')
+          sudo xcode-select -s /Applications/Xcode_$XCODE_VERSION.app/Contents/Developer
+
+      - name: Create canonical source directory
+        run: |
+          set -x
+          sudo mkdir -p /Users/Shared
+          cp -R $GITHUB_WORKSPACE /Users/Shared/
+          mv /Users/Shared/$(basename $GITHUB_WORKSPACE) /Users/Shared/telegram-ios
+
+      - name: Regenerate provisioning profiles for custom bundle
+        run: |
+          set -x
+          cd /Users/Shared/telegram-ios
+          python3 build-system/Make/RegenerateProfilesForBundle.py \
+            --profiles build-system/fake-codesigning/profiles \
+            --certs-path build-system/fake-codesigning/certs \
+            --old-bundle ph.telegra.Telegraph \
+            --new-bundle ph.telegra.TelegramPlus
+
+      - name: Build the App
+        run: |
+          set -x
+
+          SOURCE_DIR=/Users/Shared/telegram-ios
+          BAZEL_USER_ROOT="/private/var/tmp/_bazel_containerhost"
+
+          cd $SOURCE_DIR
+
+          BUILD_NUMBER_OFFSET="$(cat build_number_offset)"
+
+          export APP_VERSION=$(cat versions.json | python3 -c 'import json,sys;obj=json.load(sys.stdin);print(obj["app"]);')
+          export COMMIT_COUNT=$(git rev-list --count HEAD)
+          export COMMIT_COUNT="$(($COMMIT_COUNT+$BUILD_NUMBER_OFFSET))"
+          export BUILD_NUMBER="$COMMIT_COUNT"
+          echo "BUILD_NUMBER=$(echo $BUILD_NUMBER)" >> $GITHUB_ENV
+          echo "APP_VERSION=$(echo $APP_VERSION)" >> $GITHUB_ENV
+
+          python3 build-system/Make/ImportCertificates.py --path build-system/fake-codesigning/certs
+          python3 -u build-system/Make/Make.py \
+            --bazelUserRoot="$BAZEL_USER_ROOT" \
+            --overrideXcodeVersion \
+            build \
+            --configurationPath="build-system/telegram-plus-configuration.json" \
+            --codesigningInformationPath=build-system/fake-codesigning \
+            --configuration=release_arm64 \
+            --buildNumber="$BUILD_NUMBER" \
+            --outputBuildArtifactsPath="build/artifacts"
+
+          # Make.py writes Swiftgram.ipa (Swiftgram fork naming) to
+          # build/artifacts/ — rename to our TelegramPlus.ipa for delivery.
+          cd $SOURCE_DIR
+          OUTPUT_PATH="build/artifacts"
+          ls -la "$OUTPUT_PATH"
+          if [ -f "$OUTPUT_PATH/Swiftgram.ipa" ]; then
+            cp "$OUTPUT_PATH/Swiftgram.ipa" "$OUTPUT_PATH/TelegramPlus.ipa"
+            echo "Collected TelegramPlus.ipa from Swiftgram.ipa"
+          else
+            echo "ERROR: Swiftgram.ipa not found in $OUTPUT_PATH"
+            ls -la "$OUTPUT_PATH" || true
+            exit 1
+          fi
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: TelegramPlus-${{ env.APP_VERSION }}-unsigned
+          path: /Users/Shared/telegram-ios/build/artifacts/TelegramPlus.ipa
+          retention-days: 30
+
+      - name: Upload DSYMs
+        run: |
+          cd /Users/Shared/telegram-ios/build/artifacts
+          if [ -d DSYMs ]; then
+            zip -r TelegramPlus.DSYMs.zip DSYMs
+          else
+            echo "No DSYMs dir; skipping zip"
+            mkdir -p DSYMs
+            zip -r TelegramPlus.DSYMs.zip DSYMs
+          fi
+        shell: bash
+      - name: Upload DSYMs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: TelegramPlus-${{ env.APP_VERSION }}-dsyms
+          path: /Users/Shared/telegram-ios/build/artifacts/TelegramPlus.DSYMs.zip
+          retention-days: 30
