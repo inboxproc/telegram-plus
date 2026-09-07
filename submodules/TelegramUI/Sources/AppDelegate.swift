@@ -1406,7 +1406,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
 
                     self.mainWindow.debugAction = nil
                     self.mainWindow.viewController = context.rootController
-                    TelegramPlusBootLogger.shared.success("rootAssignment", "SUCCESS viewController=\(NSStringFromClass(type(of: context.rootController))) rootTabController=\(String(describing: (context.rootController as? TelegramRootController)?.rootTabController))")
+                    TelegramPlusBootLogger.shared.success("rootAssignment", "SUCCESS viewController=\(NSStringFromClass(type(of: context.rootController))) rootTabController=\(String(describing: context.rootController.rootTabController))")
                     TelegramPlusBootLogger.shared.state("afterRootAssignment", "SUCCESS rootVC=\(self.mainWindow.viewController.map { NSStringFromClass(type(of: $0)) } ?? "nil")")
                     TelegramPlusBootLogger.shared.windowState("afterRootAssignment", self.window)
                     
