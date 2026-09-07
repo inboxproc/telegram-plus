@@ -93,22 +93,11 @@ public final class TelegramPlusBootLogger {
     /// Dump a compact snapshot of a UIWindow's runtime state.
     public func windowState(_ stage: String, _ window: UIWindow?) {
         guard let window = window else {
-            self.log(stage, "WINDOW_STATE", "window=nil")
+            self.state(stage, "WINDOW_STATE window=nil")
             return
         }
-        var sceneState: String = "n/a"
-        if let scene = window.windowScene {
-            switch scene.activationState {
-            case .active: sceneState = "active"
-            case .inactive: sceneState = "inactive"
-            case .background: sceneState = "background"
-            case .foregroundActive: sceneState = "foregroundActive"
-            case .foregroundInactive: sceneState = "foregroundInactive"
-            case .unattached: sceneState = "unattached"
-            @unknown default: sceneState = "unknown"
-            }
-        }
-        let rootVC = window.rootViewController.map { NSStringFromClass(type(of: $0)) } ?? "nil"
-        self.state(stage, "WINDOW kkey=\\(window.isKeyWindow) hidden=\\(window.isHidden) frame=\\(window.frame) bounds=\\(window.bounds) rootVC=\\(rootVC) scene=\\(sceneState)")
+        let sceneState: String = window.windowScene.map { String(describing: $0.activationState.rawValue) } ?? "n/a"
+        let rootVC: String = window.rootViewController.map { NSStringFromClass(type(of: $0)) } ?? "nil"
+        self.state(stage, "WINDOW key=\(window.isKeyWindow) hidden=\(window.isHidden) frame=\(window.frame) bounds=\(window.bounds) rootVC=\(rootVC) scene=\(sceneState)")
     }
 }

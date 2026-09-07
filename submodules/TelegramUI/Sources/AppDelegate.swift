@@ -430,7 +430,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         self.window = window
         self.nativeWindow = window
         TelegramPlusBootLogger.shared.success("windowCreation", "SUCCESS nativeWindowHostView class=\(NSStringFromClass(type(of: window))) rootVC=\(String(describing: window.rootViewController))")
-        TelegramPlusBootLogger.shared.state("windowState", "exists=\(window != nil) hidden=\(window.isHidden) key=\(window.isKeyWindow) bounds=\(window.bounds)")
+        TelegramPlusBootLogger.shared.state("windowState", "hidden=\(window.isHidden) key=\(window.isKeyWindow) bounds=\(window.bounds)")
         // MARK: Swiftgram
         TelegramPlusBootLogger.shared.start("sgHardReset", "START")
         if sgHardReset(present: self.mainWindow?.presentNative, beforePresent: { self.window?.makeKeyAndVisible() }) {
@@ -555,7 +555,7 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
         let baseAppBundleId = Bundle.main.bundleIdentifier!
         let appGroupName = "group.\(baseAppBundleId)"
         let maybeAppGroupUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupName)
-        TelegramPlusBootLogger.shared.state("identity", "bundleId=\(baseAppBundleId) executable=\(Bundle.main.executablePath?.lastPathComponent ?? "?") version=\(appVersion) appGroup=\(appGroupName) appGroupUrl=\(maybeAppGroupUrl?.path ?? "nil")")
+        TelegramPlusBootLogger.shared.state("identity", "bundleId=\(baseAppBundleId) executable=\((Bundle.main.executablePath as NSString?)?.lastPathComponent ?? "?") version=\(appVersion) appGroup=\(appGroupName) appGroupUrl=\(maybeAppGroupUrl?.path ?? "nil")")
         
         let buildConfig = BuildConfig(baseAppBundleId: baseAppBundleId)
         self.buildConfig = buildConfig
@@ -1402,13 +1402,13 @@ private func extractAccountManagerState(records: AccountRecordsView<TelegramAcco
                     }
                     print("Launch to ready took \((CFAbsoluteTimeGetCurrent() - launchStartTime) * 1000.0) ms")
                     TelegramPlusBootLogger.shared.state("beforeRootAssignment", "READY_TRUE_ABOUT_TO_ASSIGN rootController=\(NSStringFromClass(type(of: context.rootController)))")
-                    TelegramPlusBootLogger.shared.windowState("beforeRootAssignment", self.mainWindow)
+                    TelegramPlusBootLogger.shared.windowState("beforeRootAssignment", self.window)
 
                     self.mainWindow.debugAction = nil
                     self.mainWindow.viewController = context.rootController
                     TelegramPlusBootLogger.shared.success("rootAssignment", "SUCCESS viewController=\(NSStringFromClass(type(of: context.rootController))) rootTabController=\(String(describing: (context.rootController as? TelegramRootController)?.rootTabController))")
                     TelegramPlusBootLogger.shared.state("afterRootAssignment", "SUCCESS rootVC=\(self.mainWindow.viewController.map { NSStringFromClass(type(of: $0)) } ?? "nil")")
-                    TelegramPlusBootLogger.shared.windowState("afterRootAssignment", self.mainWindow)
+                    TelegramPlusBootLogger.shared.windowState("afterRootAssignment", self.window)
                     
                     if firstTime {
                         let layer = context.rootController.view.layer
