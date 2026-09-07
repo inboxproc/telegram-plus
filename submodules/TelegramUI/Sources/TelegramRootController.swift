@@ -846,6 +846,24 @@ public final class TelegramRootController: NavigationController, TelegramRootCon
     public func startNewCall() {
         self.callListController?.tabBarActivateSearch()
     }
+
+    override public func viewDidLoad() {
+        TelegramPlusBootLogger.shared.start("rootLifecycle", "ROOT_viewDidLoad class=\(NSStringFromClass(type(of: self)))")
+        super.viewDidLoad()
+        TelegramPlusBootLogger.shared.success("rootLifecycle", "ROOT_viewDidLoad_DONE")
+    }
+
+    override public func viewWillAppear(_ animated: Bool) {
+        TelegramPlusBootLogger.shared.start("rootLifecycle", "ROOT_viewWillAppear animated=\(animated)")
+        super.viewWillAppear(animated)
+        TelegramPlusBootLogger.shared.success("rootLifecycle", "ROOT_viewWillAppear_DONE")
+    }
+
+    override public func viewDidAppear(_ animated: Bool) {
+        TelegramPlusBootLogger.shared.start("rootLifecycle", "ROOT_viewDidAppear animated=\(animated)")
+        super.viewDidAppear(animated)
+        TelegramPlusBootLogger.shared.success("rootLifecycle", "ROOT_viewDidAppear_DONE")
+    }
 }
 
 #if SWIFT_PACKAGE

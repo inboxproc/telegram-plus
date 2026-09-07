@@ -154,6 +154,7 @@ open class TabBarControllerImpl: ViewController, TabBarController {
     }
     
     override open func loadDisplayNode() {
+        NSLog("[TP-BOOT] %@", "tabBarLifecycle | loadDisplayNode START")
         self.displayNode = TabBarControllerNode(theme: self.theme, strings: self.strings, itemSelected: { [weak self] index, longTap, itemNodes in
             if let strongSelf = self {
                 if longTap, let controller = strongSelf.controllers[index] as? TabBarContainedController {
@@ -266,6 +267,7 @@ open class TabBarControllerImpl: ViewController, TabBarController {
         
         self.updateSelectedIndex()
         self.displayNodeDidLoad()
+        NSLog("[TP-BOOT] %@", "tabBarLifecycle | loadDisplayNode DONE (displayNodeDidLoad)")
     }
     
     public func updateBackgroundAlpha(_ alpha: CGFloat, transition: ContainedViewLayoutTransition) {

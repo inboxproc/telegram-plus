@@ -159,6 +159,7 @@ final class AuthorizedApplicationContext {
     private var enablePostboxTransactionsDiposable: Disposable?
     
     init(sharedApplicationContext: SharedApplicationContext, mainWindow: Window1, context: AccountContextImpl, accountManager: AccountManager<TelegramAccountManagerTypes>, showContactsTab: Bool, showCallsTab: Bool, reinitializedNotificationSettings: @escaping () -> Void) {
+        TelegramPlusBootLogger.shared.start("AuthorizedApplicationContext.init", "START accountId=\(context.account.id) showContactsTab=\(showContactsTab) showCallsTab=\(showCallsTab)")
         self.sharedApplicationContext = sharedApplicationContext
         
         setupLegacyComponents(context: context)
@@ -176,6 +177,7 @@ final class AuthorizedApplicationContext {
         self.notificationController = NotificationContainerController(context: context)
         
         self.rootController = TelegramRootController(context: context)
+        TelegramPlusBootLogger.shared.start("rootController", "START class=TelegramRootController")
         self.rootController.minimizedContainer = self.sharedApplicationContext.minimizedContainer[context.account.id]
         self.rootController.minimizedContainerUpdated = { [weak self] minimizedContainer in
             guard let self else {
@@ -254,18 +256,23 @@ final class AuthorizedApplicationContext {
         }
         
         if self.rootController.rootTabController == nil {
+            TelegramPlusBootLogger.shared.start("addRootControllers", "START")
             self.rootController.addRootControllers(hidePhoneInSettings: SGSimpleSettings.shared.hidePhoneInSettings, showContactsTab: self.showContactsTab, showCallsTab: self.showCallsTab)
+            TelegramPlusBootLogger.shared.success("addRootControllers", "SUCCESS rootTabController=\(String(describing: self.rootController.rootTabController))")
         }
         if let tabsController = self.rootController.viewControllers.first as? TabBarController, !tabsController.controllers.isEmpty, tabsController.selectedIndex >= 0 {
             let controller = tabsController.controllers[tabsController.selectedIndex]
+            TelegramPlusBootLogger.shared.state("isReadyGate", "WAITING combineReady tabsReady+controllerReady tabCount=\(tabsController.controllers.count) selected=\(tabsController.selectedIndex) selectedClass=\(NSStringFromClass(type(of: controller)))")
             let combinedReady = combineLatest(tabsController.ready.get(), controller.ready.get())
             |> map { $0 && $1 }
             |> filter { $0 }
             |> take(1)
             self.isReady.set(combinedReady)
         } else {
+            TelegramPlusBootLogger.shared.state("isReadyGate", "IMMEDIATE tabsController_fallback single(true) tabCount=\(String(describing: (self.rootController.viewControllers.first as? TabBarController)?.controllers.count))")
             self.isReady.set(.single(true))
         }
+        TelegramPlusBootLogger.shared.success("AuthorizedApplicationContext.init", "DONE isReady_gate_set. Will block until tabsReady+controllerReady or fallback single(true)")
         
         let accountId = context.account.id
         self.loggedOutDisposable.set((context.account.loggedOut
