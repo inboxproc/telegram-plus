@@ -1,0 +1,11 @@
+name: Diag Runner Alloc
+
+on:
+  workflow_dispatch:
+
+jobs:
+  alloc:
+    runs-on: macos-26
+    steps:
+      - name: runner allocation test
+        run: echo "runner allocation test OK on $(uname -a)"
